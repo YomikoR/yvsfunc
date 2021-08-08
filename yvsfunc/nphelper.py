@@ -38,20 +38,24 @@ def np_read_plane(frame: vs.VideoFrame, plane: int, keep_stride: bool = False) -
     '''
     Cast the view of plane as `numpy.ndarray` using `get_read_ptr`.
     '''
+    width = frame.width >> frame.format.subsampling_w if plane > 0 else frame.width
+    height = frame.height >> frame.format.subsampling_h if plane > 0 else frame.height
     dtype = np_get_dtype(frame)
-    pt_cast = ctypes.cast(frame.get_read_ptr(plane), ctypes.POINTER(ctypes.c_uint8 * frame.get_stride(plane) * frame.height))
+    pt_cast = ctypes.cast(frame.get_read_ptr(plane), ctypes.POINTER(ctypes.c_uint8 * frame.get_stride(plane) * height))
     arr = np.ctypeslib.as_array(pt_cast, shape=()).view(dtype)
-    return arr if keep_stride else arr[:, :frame.width]
+    return arr if keep_stride else arr[:, :width]
 
 
 def np_write_plane(frame: vs.VideoFrame, plane: int, keep_stride: bool = False) -> np.ndarray:
     '''
     Cast the view of plane as `numpy.ndarray` using `get_write_ptr`.
     '''
+    width = frame.width >> frame.format.subsampling_w if plane > 0 else frame.width
+    height = frame.height >> frame.format.subsampling_h if plane > 0 else frame.height
     dtype = np_get_dtype(frame)
-    pt_cast = ctypes.cast(frame.get_write_ptr(plane), ctypes.POINTER(ctypes.c_uint8 * frame.get_stride(plane) * frame.height))
+    pt_cast = ctypes.cast(frame.get_write_ptr(plane), ctypes.POINTER(ctypes.c_uint8 * frame.get_stride(plane) * height))
     arr = np.ctypeslib.as_array(pt_cast, shape=()).view(dtype)
-    return arr if keep_stride else arr[:, :frame.width]
+    return arr if keep_stride else arr[:, :width]
 
 
 def make_eye(n: int) -> vs.VideoNode:

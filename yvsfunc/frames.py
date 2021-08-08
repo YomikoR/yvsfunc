@@ -159,7 +159,7 @@ def gen_timestamps(clip: vs.VideoNode, output_file: str, fallback_fps_num: int =
             dur_den = f.props['_DurationDen']
             durations.append(Fraction(dur_num, dur_den))
         except KeyError:
-            durations.append(Fraction[fallback_fps_den, fallback_fps_num])
+            durations.append(Fraction(fallback_fps_den, fallback_fps_num))
 
     print('Reading frames for timestamps creation...', file=sys.stderr)
     loop_frames(clip, _get_frame_dur)

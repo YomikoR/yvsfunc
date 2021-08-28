@@ -43,7 +43,7 @@ def vn_denoise(clip: vs.VideoNode, ref: Optional[vs.VideoNode] = None, sigma: Un
     return denoise
 
 
-def KNLMYUV(clip: vs.VideoNode, args_1p: Dict[Any] = dict(d=0, a=4, h=0.2), args_2p: Dict[Any] = dict(), chromaloc_in_s: str = 'left', opencl: bool = True, show_ref: bool = False) -> vs.VideoNode:
+def KNLMYUV(clip: vs.VideoNode, args_1p: Dict[Any, Any] = dict(d=0, a=4, h=0.2), args_2p: Dict[Any, Any] = dict(), chromaloc_in_s: str = 'left', opencl: bool = True, show_ref: bool = False) -> vs.VideoNode:
     '''
     A KNLMeansCL wrapper for YUV420 input:
     1. resize luma to half size

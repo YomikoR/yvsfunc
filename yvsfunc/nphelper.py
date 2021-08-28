@@ -14,7 +14,7 @@ __all__ = [
     'make_eye',
 ]
 
-def np_get_dtype(frame: Union[vs.VideoFrame, vs.VideoNode]) -> np.DTypeLike:
+def np_get_dtype(frame: Union[vs.VideoFrame, vs.VideoNode]):
     func_name = 'np_get_dtype'
     if frame.format.sample_type == vs.INTEGER:
         if frame.format.bytes_per_sample == 1:

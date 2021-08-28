@@ -88,11 +88,14 @@ class ResClip:
     def show(self) -> vs.VideoNode:
         return core.text.Text(self.clip, f'sx={self.sx}\nsy={self.sy}\nsw={self.sw}\nsh={self.sh}')
 
-    def hermite(self, width: int, height: int, **resizer_args) -> vs.VideoNode:
+    def bicubic(self, width: int, height: int, b: float = 0, c: float = 0.5, **resizer_args) -> vs.VideoNode:
         args = self.make_resize_dict()
         args.update(resizer_args)
-        args.update(dict(width=width, height=height, filter_param_a=0, filter_param_b=0))
+        args.update(dict(width=width, height=height, filter_param_a=b, filter_param_b=c))
         return core.resize.Bicubic(self.clip, **args)
+
+    def hermite(self, width: int, height: int, **resizer_args) -> vs.VideoNode:
+        return self.bicubic(width, height, b=0, c=0, **resizer_args)
 
     def spline36(self, width: int, height: int, **resizer_args) -> vs.VideoNode:
         args = self.make_resize_dict()

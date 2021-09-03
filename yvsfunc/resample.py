@@ -1,10 +1,9 @@
 # I don't use znedi3...
 from typing import Any, Callable, Dict, List, Optional, Union
 import vapoursynth as vs
-from vsutil.info import get_subsampling
 core = vs.core
 import vsutil.types
-from vsutil import depth, fallback, get_depth, join, plane, split
+from vsutil import depth, fallback, get_depth, get_subsampling, join, plane, split
 from functools import partial
 from math import ceil, floor
 

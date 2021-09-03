@@ -27,9 +27,9 @@ def to_rgb(clip: vs.VideoNode, output_depth: int = 16, matrix_in_s: str = '709')
 
 def playback(clip: vs.VideoNode, icc: Optional[str] = None, csp: str = '709', intent: str = 'relative') -> vs.VideoNode:
     '''
-    Wrapper for iccc.ICCPlayback for video playback, like in mpv.
+    Wrapper for iccc.Playback for video playback, like in mpv.
     '''
-    return to_rgb(clip).iccc.ICCPlayback(display_icc=icc, playback_csp=csp, intent=intent)
+    return to_rgb(clip).iccc.Playback(display_icc=icc, playback_csp=csp, intent=intent)
 
 
 def ab(clipa: vs.VideoNode, clipb: vs.VideoNode, rgb: bool = True, position: int = 5, matrix_in_s: str = '709') -> vs.VideoNode:

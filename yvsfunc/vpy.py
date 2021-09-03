@@ -57,6 +57,8 @@ def read_vpy(script: str, params: dict = dict(), output_idx: int = 0) -> vs.Vide
 
     A reserved flag YVSFUNC_WITH_U2A is set to distinguish between read_vpy and vspipe
     so that the VPY file will be compatible with both environments.
+
+    Since R55, a tuple is returned where the first entry is a VideoNode.
     '''
     params_ascii = dict(
         YVSFUNC_WITH_U2A = u2a('1')

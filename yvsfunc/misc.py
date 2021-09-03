@@ -57,11 +57,12 @@ def pl_deband(clip: vs.VideoNode, planes: List[int] = [0, 1, 2], it: Union[int, 
     '''
     Yet another wrapper for placebo.Deband
     '''
-    it = y_param_to_list(it)
-    thr = y_param_to_list(thr)
-    rad = y_param_to_list(rad)
+    func_name = 'pl_deband'
+    it = y_param_to_list(func_name, it)
+    thr = y_param_to_list(func_name, thr)
+    rad = y_param_to_list(func_name, rad)
     if clip.format.color_family in [vs.RGB, vs.GRAY] or isinstance(grain, list):
-        grain = y_param_to_list(grain)
+        grain = y_param_to_list(func_name, grain)
     else:
         # Don't add grain to chroma planes unless intended
         grain = [grain, 0, 0]
@@ -108,6 +109,6 @@ def non_telop_mask(src: vs.VideoNode, nc: vs.VideoNode, thr: Union[int, float] =
         return non_telop_mask(src, nc, thr=thr, prefilter=bic_blur)
     else:
         return non_telop_mask(src, nc, thr=thr, prefilter=partial(core.std.Convolution, matrix=[1] * 9))
-    thr = y_param_to_list(thr)
+    thr = y_param_to_list('non_telop_mask', thr)
     diff = core.std.Expr([s, n], 'x y - abs')
     return core.std.Binarize(diff, thr if s.format.num_planes == 3 else thr[0])

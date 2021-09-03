@@ -1,62 +1,10 @@
 # Helper functions for numpy
-from typing import Union
-import ctypes
 import vapoursynth as vs
 core = vs.core
-import numpy as np
-
-from .misc import y_error_msg
 
 __all__ = [
-    'np_get_dtype',
-    'np_read_plane',
-    'np_write_plane',
     'make_eye',
 ]
-
-def np_get_dtype(frame: Union[vs.VideoFrame, vs.VideoNode]):
-    func_name = 'np_get_dtype'
-    if frame.format.sample_type == vs.INTEGER:
-        if frame.format.bytes_per_sample == 1:
-            return np.uint8
-        elif frame.format.bytes_per_sample == 2:
-            return np.uint16
-        elif frame.format.bytes_per_sample == 4: # Supported by v4 API
-            return np.uint32
-        else:
-            y_error_msg(func_name, 'input format not supported')
-    else:
-        if frame.format.bytes_per_sample == 2:
-            return np.float16
-        elif frame.format.bytes_per_sample == 4:
-            return np.float32
-        else:
-            y_error_msg(func_name, 'input format not supported')
-
-
-def np_read_plane(frame: vs.VideoFrame, plane: int, keep_stride: bool = False) -> np.ndarray:
-    '''
-    Cast the view of plane as `numpy.ndarray` using `get_read_ptr`.
-    '''
-    width = frame.width >> frame.format.subsampling_w if plane > 0 else frame.width
-    height = frame.height >> frame.format.subsampling_h if plane > 0 else frame.height
-    dtype = np_get_dtype(frame)
-    pt_cast = ctypes.cast(frame.get_read_ptr(plane), ctypes.POINTER(ctypes.c_uint8 * frame.get_stride(plane) * height))
-    arr = np.ctypeslib.as_array(pt_cast, shape=()).view(dtype)
-    return arr if keep_stride else arr[:, :width]
-
-
-def np_write_plane(frame: vs.VideoFrame, plane: int, keep_stride: bool = False) -> np.ndarray:
-    '''
-    Cast the view of plane as `numpy.ndarray` using `get_write_ptr`.
-    '''
-    width = frame.width >> frame.format.subsampling_w if plane > 0 else frame.width
-    height = frame.height >> frame.format.subsampling_h if plane > 0 else frame.height
-    dtype = np_get_dtype(frame)
-    pt_cast = ctypes.cast(frame.get_write_ptr(plane), ctypes.POINTER(ctypes.c_uint8 * frame.get_stride(plane) * height))
-    arr = np.ctypeslib.as_array(pt_cast, shape=()).view(dtype)
-    return arr if keep_stride else arr[:, :width]
-
 
 def make_eye(n: int) -> vs.VideoNode:
     '''

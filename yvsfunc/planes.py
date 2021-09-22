@@ -14,10 +14,7 @@ __all__ = [
 def sep_fields(clip: vs.VideoNode, tff: bool = True, progressive: bool = True) -> List[vs.VideoNode]:
     sep = core.std.SeparateFields(clip, tff=tff)
     if progressive:
-        if 'API R4.' in core.version():
-            sep = core.std.RemoveFrameProps(sep, '_Field')
-        else:
-            sep = core.std.SetFrameProp(sep, '_Field', delete=True)
+        sep = core.std.RemoveFrameProps(sep, '_Field')
     return [sep[0::2], sep[1::2]]
 
 

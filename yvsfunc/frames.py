@@ -118,30 +118,18 @@ def mdec(clip: vs.VideoNode, drop: Union[int, List[int]], cycle: int = 5, modify
     return core.std.SelectEvery(clip, cycle=cycle, offsets=keep, modify_duration=modify_duration)
 
 
-def loop_frames(clip: vs.VideoNode, cb: Callable[[int, vs.VideoFrame], None]) -> None:
-    if 'API R4.' in core.version():
-        for n, f in enumerate(clip.frames()):
-            cb(n, f)
-    else:
-        for n in range(len(clip)):
-            f = clip.get_frame(n)
-            cb(n, f)
-
-
 def clip_time(clip: vs.VideoNode, default_duration: float = 1001 / 24) -> float:
     '''
     Total time of clip in ms
     '''
     total_ms: float = 0
-    def _cb(n: int, f: vs.VideoFrame) -> None:
-        nonlocal total_ms
+    for n, f in enumerate(clip.frames()):
         try:
             dur_num = f.props['_DurationNum']
             dur_den = f.props['_DurationDen']
             total_ms += 1000 * dur_num / dur_den
         except KeyError:
             total_ms += default_duration
-    loop_frames(clip, _cb)
     return total_ms
 
 
@@ -152,7 +140,8 @@ def gen_timestamps(clip: vs.VideoNode, output_file: str, fallback_fps_num: int =
     durations: List[Fraction] = []
     num_frames = len(clip)
 
-    def _get_frame_dur(n: int, f: vs.VideoNode) -> None:
+    print('Reading frames for timestamps creation...', file=sys.stderr)
+    for n, f in enumerate(clip.frames()):
         print(f'\r{n + 1}/{num_frames}', end='', file=sys.stderr)
         try:
             dur_num = f.props['_DurationNum']
@@ -160,9 +149,6 @@ def gen_timestamps(clip: vs.VideoNode, output_file: str, fallback_fps_num: int =
             durations.append(Fraction(dur_num, dur_den))
         except KeyError:
             durations.append(Fraction(fallback_fps_den, fallback_fps_num))
-
-    print('Reading frames for timestamps creation...', file=sys.stderr)
-    loop_frames(clip, _get_frame_dur)
     print('\nDone.', file=sys.stderr)
 
     with open(output_file, 'w') as outf:

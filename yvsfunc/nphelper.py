@@ -6,15 +6,14 @@ __all__ = [
     'make_eye',
 ]
 
-def make_eye(n: int) -> vs.VideoNode:
+def make_eye(dim: int) -> vs.VideoNode:
     '''
     A square clip filled with identity matrix
     '''
-    clip = core.std.BlankClip(format=vs.GRAYS, width=n, height=n, length=1)
+    clip = core.std.BlankClip(format=vs.GRAYS, width=dim, height=dim, length=1)
     def _make_eye(n: int, f: vs.VideoFrame) -> vs.VideoFrame:
         fout = f.copy()
-        dst_f = fout.get_write_array(0)
-        for x in range(n):
-            dst_f[x, x] = 1.0
+        for x in range(dim):
+            fout[0][x, x] = 1.0
         return fout
     return core.std.ModifyFrame(clip, clips=clip, selector=_make_eye)

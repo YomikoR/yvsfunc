@@ -102,6 +102,11 @@ class ResClip:
         args.update(dict(width=width, height=height))
         return core.resize.Spline36(self.clip, **args)
 
+    def lanczos(self, width: int, height: int, taps: int = 3, **resizer_args) -> vs.VideoNode:
+        args = self.make_resize_dict()
+        args.update(resizer_args)
+        args.update(dict(width=width, height=height, filter_param_a=taps))
+        return core.resize.Lanczos(self.clip, **args)
 
 ### Descale wrappers
 #   For two typical cases in anime upscaling:

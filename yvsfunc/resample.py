@@ -294,8 +294,8 @@ def nn444(clip, opencl: bool = False, **nnedi3_args: Any) -> vs.VideoNode:
         y, u, v = split(clip)
         # Interleave to save number of filter calls
         uv = core.std.Interleave([u, v])
-        uv_up1 = nnedi3(uv.std.Transpose(), field=1, dh=True)
-        uv_up2 = nnedi3(uv_up1.std.Transpose(), field=0, dh=True).resize.Spline36(src_top=0.5)
+        uv_up1 = nnedi3(uv, field=0, dh=True).std.Transpose().resize.Spline36(src_left=0.5)
+        uv_up2 = nnedi3(uv_up1, field=1, dh=True).std.Transpose()
         return join([y, uv_up2[0::2], uv_up2[1::2]])
     elif get_subsampling(clip) == '422':
         nnedi3 = get_nnedi3(opencl=opencl, **nnedi3_args)

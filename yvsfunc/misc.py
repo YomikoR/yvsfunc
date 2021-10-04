@@ -34,18 +34,11 @@ def repair(clip: vs.VideoNode, repairclip: vs.VideoNode, mode: Union[int, List[i
     elif mode == 0:
         return clip
     else:
-        import rgvs
         if pixel is None:
+            import rgvs
             return rgvs.repair(clip, repairclip, mode, planes)
-        elif isinstance(mode, int):
-            np = clip.format.num_planes
-            modes = [0] * np
-            for p in planes:
-                if p in range(np):
-                    modes[p] = mode
-            return core.sprep.spRepair(clip, repairclip, modes, pixel)
         else:
-            y_error_msg(func_name, 'mode must be integer when using sprep')
+            return core.sprep.spRepair(clip, repairclip, mode, pixel)
 
 
 def bic_blur(clip: vs.VideoNode, b: float = 1, it: int = 1) -> vs.VideoNode:

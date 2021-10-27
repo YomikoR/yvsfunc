@@ -26,19 +26,47 @@ def y_param_to_list(func_name: str, value: Optional[Union[int, float]]) -> List[
     else:
         return [value] * 3
 
-
-def repair(clip: vs.VideoNode, repairclip: vs.VideoNode, mode: Union[int, List[int]] = 1, pixel: Optional[float] = None, planes: Optional[Union[int, List[int]]] = None) -> vs.VideoNode:
+# https://github.com/dnjulek/jvsfunc/blob/164b02aad92d746fed2d56207868ebbe91caa38c/jvsfunc.py#L50-L66
+def repair(clip: vs.VideoNode, repairclip: vs.VideoNode, mode: int = 1, pixel: Optional[float] = None) -> vs.VideoNode:
     func_name = 'repair'
-    if mode < 0:
-        return repair(clip, repairclip, mode=-mode, pixel=pixel, planes=planes)
-    elif mode == 0:
+    if mode == 0:
         return clip
+    elif mode < 0:
+        return repair(repairclip, clip, -mode, pixel)
+    mode_list = [1, 2, 3, 4, 11, 12, 13, 14]
+    if mode not in mode_list:
+        y_error_msg(func_name, 'Only modes 1-4 and 11-14 are implemented.')
+    if pixel is None:
+        sp = False
     else:
-        if pixel is None:
-            import rgvs
-            return rgvs.repair(clip, repairclip, mode, planes)
-        else:
-            return core.sprep.spRepair(clip, repairclip, mode, pixel)
+        pixel = abs(pixel)
+        if pixel > 1.0:
+            y_error_msg(func_name, 'Shifting more than 1 pixel is not supported.')
+        sp = (pixel != 1.0)
+    if sp:
+        p = pixel
+        q = 1.0 - pixel
+        pp = p * p
+        qq = q * q
+        pq = p * q
+        plt = f'y[-1,-1] {pp} * y[-1,0] {pq} * + y[0,-1] {pq} * + y {qq} * + '
+        prt = f'y[1,-1] {pp} * y[1,0] {pq} * + y[0,-1] {pq} * + y {qq} * + '
+        plb = f'y[-1,1] {pp} * y[-1,0] {pq} * + y[0,1] {pq} * + y {qq} * + '
+        prb = f'y[1,1] {pp} * y[1,0] {pq} * + y[0,1] {pq} * + y {qq} * + '
+        pl = f'y[-1,0] {p} * y {q} * + '
+        pr = f'y[1,0] {p} * y {q} * + '
+        pt = f'y[0,-1] {p} * y {q} * + '
+        pb = f'y[0,1] {p} * y {q} * + '
+        pixels = plt + prt + plb + prb + pl + pr + pt + pb
+    else:
+        pixels = 'y[-1,-1] y[0,-1] y[1,-1] y[-1,0] y[1,0] y[-1,1] y[0,1] y[1,1] '
+    if mode <= 4:
+        expr = f'y sort9 dup{9 - mode} max! dup{mode - 1} min! drop9 x min@ max@ clamp'
+    else:
+        mode = mode - 10
+        expr = f'sort8 dup{8 - mode} max! dup{mode - 1} min! drop8 y min@ min ymin! y max@ max ymax! x ymin@ ymax@ clamp'
+
+    return core.akarin.Expr([clip, repairclip], pixels + expr)
 
 
 def bic_blur(clip: vs.VideoNode, b: float = 1, it: int = 1) -> vs.VideoNode:

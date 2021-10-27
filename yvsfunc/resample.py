@@ -270,7 +270,7 @@ def fdescale(clip: Union[ResClip, vs.VideoNode], ratio: float, base_width: Optio
 def get_nnedi3(opencl: bool = False, **nnedi3_args: Any) -> Callable[..., vs.VideoNode]:
     args = dict(nsize=4, nns=4, qual=2, pscrn=1)
     args.update(nnedi3_args)
-    return partial(core.nnedi3cl.NNEDI3CL if opencl else core.nnedi3.nnedi3, **args)
+    return partial(core.nnedi3cl.NNEDI3CL if opencl else core.znedi3.nnedi3, **args)
 
 
 def get_nnedi3cl(**nnedi3_args: Any) -> Callable[..., vs.VideoNode]:

@@ -12,7 +12,7 @@ __all__ = [
     'KNLMYUV',
 ]
 
-def vn_denoise(clip: vs.VideoNode, ref: Optional[vs.VideoNode] = None, sigma: Union[float, List[float]] = 15, radius: int = 2, opencl: bool = True, cuda: bool = True, **bm3d_args: Any) -> vs.VideoNode:
+def vn_denoise(clip: vs.VideoNode, ref: Optional[vs.VideoNode] = None, sigma: Union[float, List[float]] = 15, radius: int = 2, cuda: bool = True, **bm3d_args: Any) -> vs.VideoNode:
     '''
     Profile 'vn' of BM3D (optionally) prefiltered with QTGMC deshimmering. \\
     Output is ALWAYS in YUV444PS.
@@ -22,7 +22,7 @@ def vn_denoise(clip: vs.VideoNode, ref: Optional[vs.VideoNode] = None, sigma: Un
         y_error_msg(func_name, 'RGB input not directly supported')
     if ref is None:
         import havsfunc as haf
-        ref = haf.QTGMC(clip, InputType=1, opencl=opencl)
+        ref = haf.QTGMC(clip, InputType=1, Sharpness=0)
     if clip.format.color_family == vs.GRAY:
         ref = depth(ref, 32)
         clip = depth(clip, 32)
@@ -43,7 +43,7 @@ def vn_denoise(clip: vs.VideoNode, ref: Optional[vs.VideoNode] = None, sigma: Un
     return denoise
 
 
-def KNLMYUV(clip: vs.VideoNode, args_1p: Dict[Any, Any] = dict(d=0, a=4, h=0.2), args_2p: Dict[Any, Any] = dict(), chromaloc_in_s: str = 'left', opencl: bool = True, show_ref: bool = False) -> vs.VideoNode:
+def KNLMYUV(clip: vs.VideoNode, args_1p: Dict[Any, Any] = dict(d=0, a=4, h=0.2), args_2p: Dict[Any, Any] = dict(), chromaloc_in_s: str = 'left', opencl: bool = False, show_ref: bool = False) -> vs.VideoNode:
     '''
     A KNLMeansCL wrapper for YUV420 input:
     1. resize luma to half size

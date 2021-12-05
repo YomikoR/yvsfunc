@@ -229,12 +229,12 @@ def bdescale(clip: Union[ResClip, vs.VideoNode], width: int = 1280, height: int 
     )
     y.clip = core.std.AddBorders(y.clip, color=color, **src_border_args)
     if with_diff:
-        down, diff = descale(y, b=b, c=c, taps=taps, with_diff=True, **descale_cropping_args)
+        down, diff = descale(y, kernel=kernel, b=b, c=c, taps=taps, with_diff=True, **descale_cropping_args)
         down.crop(**descale_border_args)
         diff.crop(**src_border_args)
         return [down.clip, diff.clip]
     else:
-        down = descale(y, b=b, c=c, taps=taps, with_diff=False, **descale_cropping_args)
+        down = descale(y, kernel=kernel, b=b, c=c, taps=taps, with_diff=False, **descale_cropping_args)
         down.crop(**descale_border_args)
         return down.clip
 

@@ -28,11 +28,11 @@ def vn_denoise(clip: vs.VideoNode, ref: Optional[vs.VideoNode] = None, sigma: Un
         clip = depth(clip, 32)
         chroma = False
     else:
-        ref = core.resize.Spline36(ref, format=vs.YUV444PS)
-        clip = core.resize.Spline36(clip, format=vs.YUV444PS)
+        ref = core.resize.Bicubic(ref, format=vs.YUV444PS)
+        clip = core.resize.Bicubic(clip, format=vs.YUV444PS)
         chroma = True
     if cuda:
-        bm3d_default_args = dict(block_step=6, bm_range=12, ps_num=2, ps_range=6, chroma=chroma, fast=True)
+        bm3d_default_args = dict(block_step=4, bm_range=12, ps_num=2, ps_range=6, chroma=chroma, fast=True)
         bm3d_default_args.update(bm3d_args)
         denoise = core.bm3dcuda.BM3D(clip, ref=ref, sigma=sigma, radius=radius, **bm3d_default_args)
         if radius > 1:
@@ -43,7 +43,7 @@ def vn_denoise(clip: vs.VideoNode, ref: Optional[vs.VideoNode] = None, sigma: Un
     return denoise
 
 
-def KNLMYUV(clip: vs.VideoNode, args_1p: Dict[Any, Any] = dict(d=0, a=4, h=0.2), args_2p: Dict[Any, Any] = dict(), chromaloc_in_s: str = 'left', opencl: bool = False, show_ref: bool = False) -> vs.VideoNode:
+def KNLMYUV(clip: vs.VideoNode, args_1p: Dict[Any, Any] = dict(d=0, a=4, h=0.2), args_2p: Dict[Any, Any] = dict(), chromaloc_in_s: str = 'left', show_ref: bool = False) -> vs.VideoNode:
     '''
     A KNLMeansCL wrapper for YUV420 input:
     1. resize luma to half size
@@ -81,7 +81,7 @@ def KNLMYUV(clip: vs.VideoNode, args_1p: Dict[Any, Any] = dict(d=0, a=4, h=0.2),
         knlm_args_1p['channels'] = 'YUV'
         dn_uv = core.knlm.KNLMeansCL(half, **knlm_args_1p)
         yh_dn = ResClip(get_y(dn_uv), sx=-sx / 2, sy=-sy / 2)
-        ypre = aa2x(yh_dn, nnedi3=get_nnedi3(opencl=opencl)).spline36(y.width, y.height)
+        ypre = aa2x(yh_dn, nnedi3=get_nnedi3()).spline36(y.width, y.height)
         if show_ref:
             return join_uv(ypre, dn_uv)
         knlm_args_2p = dict()

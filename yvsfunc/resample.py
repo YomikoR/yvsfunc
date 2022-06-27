@@ -312,7 +312,9 @@ def nn444(clip, opencl: bool = False, **nnedi3_args: Any) -> vs.VideoNode:
         y_error_msg(func_name, 'format not supported')
 
 
-def interpolate(clip: ResClip, nnedi3: Optional[Callable[..., vs.VideoNode]] = None, eedi3: Optional[Callable[..., vs.VideoNode]] = None, field: int = 1, dh: bool = True, with_nn: bool = False) -> Union[ResClip, List[ResClip]]:
+def interpolate(clip: Union[ResClip, vs.VideoNode], nnedi3: Optional[Callable[..., vs.VideoNode]] = None, eedi3: Optional[Callable[..., vs.VideoNode]] = None, field: Optional[int] = None, dh: bool = True, with_nn: bool = False) -> Union[ResClip, List[ResClip]]:
+    if isinstance(clip, vs.VideoNode):
+        clip = ResClip(clip)
     # Using nnedi3 by default
     deint: Optional[Callable[..., vs.VideoNode]] = None
     if nnedi3 is None:
@@ -324,9 +326,13 @@ def interpolate(clip: ResClip, nnedi3: Optional[Callable[..., vs.VideoNode]] = N
         deint = nnedi3
     # Adjust output cropping args
     if dh:
+        if field is None:
+            field = 1 if clip.sy > 0 else 0
         sh = clip.sh * 2
         sy = clip.sy * 2 + 0.5 - field
     else:
+        if field is None:
+            field = 1
         sh = clip.sh
         sy = clip.sy
 

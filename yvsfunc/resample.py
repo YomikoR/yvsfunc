@@ -108,6 +108,12 @@ class ResClip:
         args.update(dict(width=width, height=height, filter_param_a=taps))
         return core.resize.Lanczos(self.clip, **args)
 
+    def __getattr__(self, name: str):
+        try:
+            return getattr(self.clip, name)
+        except AttributeError:
+            raise AttributeError(f'Attribute {name} is not found in ResClip.')
+
 ### Descale wrappers
 #   For two typical cases in anime upscaling:
 #       upscaled with non-reflection border handling causing ringing (use bdescale)

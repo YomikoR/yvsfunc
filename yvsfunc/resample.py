@@ -354,6 +354,16 @@ def interpolate(clip: Union[ResClip, vs.VideoNode], nnedi3: Optional[Callable[..
         return clip.copy(ip, sy=sy, sh=sh)
 
 
+def intra_aa(clip: vs.VideoNode, nnedi3: Optional[Callable[..., vs.VideoNode]] = None, eedi3: Optional[Callable[..., vs.VideoNode]] = None) -> vs.VideoNode:
+    clip = ResClip(clip)
+    aa0 = interpolate(clip, nnedi3, eedi3, field=0, dh=False).clip
+    aa1 = interpolate(clip, nnedi3, eedi3, field=1, dh=False).clip
+    clip.transpose()
+    aa2 = interpolate(clip, nnedi3, eedi3, field=0, dh=False).std.Transpose()
+    aa3 = interpolate(clip, nnedi3, eedi3, field=1, dh=False).std.Transpose()
+    return core.akarin.Expr([aa0, aa1, aa2, aa3], 'x y z a sort4 dup1 r1! dup2 r2! drop4 r1@ r2@ + 2 /')
+
+
 def aa2x(clip: Union[ResClip, vs.VideoNode], nnedi3: Optional[Callable[..., vs.VideoNode]] = None, eedi3: Optional[Callable[..., vs.VideoNode]] = None) -> ResClip:
     '''
     The usual 2x filter with nnedi3 and/or eedi3.

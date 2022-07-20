@@ -20,6 +20,7 @@ __all__ = [
     'get_eedi3',
     'get_eedi3cl',
     'nn444',
+    'intra_aa',
     'aa2x',
     'ee2x',
     'daa_mod',

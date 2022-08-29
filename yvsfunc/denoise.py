@@ -8,42 +8,17 @@ from .planes import join_uv
 from .resample import aa2x, get_nnedi3, ResClip
 
 __all__ = [
-    'vn_denoise',
     'KNLMYUV',
 ]
 
-def vn_denoise(clip: vs.VideoNode, ref: Optional[vs.VideoNode] = None, sigma: Union[float, List[float]] = 15, radius: int = 2, cuda: bool = True, **bm3d_args: Any) -> vs.VideoNode:
-    '''
-    Profile 'vn' of BM3D (optionally) prefiltered with QTGMC deshimmering. \\
-    Output is ALWAYS in YUV444PS.
-    '''
-    func_name = 'vn_denoise'
-    if clip.format.color_family == vs.RGB:
-        y_error_msg(func_name, 'RGB input not directly supported')
-    if ref is None:
-        import havsfunc as haf
-        ref = haf.QTGMC(clip, InputType=1, Sharpness=0)
-    if clip.format.color_family == vs.GRAY:
-        ref = depth(ref, 32)
-        clip = depth(clip, 32)
-        chroma = False
-    else:
-        ref = core.resize.Bicubic(ref, format=vs.YUV444PS)
-        clip = core.resize.Bicubic(clip, format=vs.YUV444PS)
-        chroma = True
-    if cuda:
-        bm3d_default_args = dict(block_step=4, bm_range=12, ps_num=2, ps_range=6, chroma=chroma, fast=True)
-        bm3d_default_args.update(bm3d_args)
-        denoise = core.bm3dcuda.BM3D(clip, ref=ref, sigma=sigma, radius=radius, **bm3d_default_args)
-        if radius > 1:
-            denoise = core.bm3d.VAggregate(denoise, radius=radius, sample=1)
-    else:
-        import mvsfunc as mvf
-        denoise = mvf.BM3D(clip, ref=ref, sigma=sigma, radius2=radius, profile2='vn', **bm3d_args)
-    return denoise
 
-
-def KNLMYUV(clip: vs.VideoNode, args_1p: Dict[Any, Any] = dict(d=0, a=4, h=0.2), args_2p: Dict[Any, Any] = dict(), chromaloc_in_s: str = 'left', show_ref: bool = False) -> vs.VideoNode:
+def KNLMYUV(
+    clip: vs.VideoNode,
+    args_1p: Dict[Any, Any] = dict(d=0, a=4, h=0.2),
+    args_2p: Dict[Any, Any] = dict(),
+    chromaloc_in_s: str = 'left',
+    show_ref: bool = False
+) -> vs.VideoNode:
     '''
     A KNLMeansCL wrapper for YUV420 input:
     1. resize luma to half size
@@ -74,7 +49,7 @@ def KNLMYUV(clip: vs.VideoNode, args_1p: Dict[Any, Any] = dict(d=0, a=4, h=0.2),
             sy = 0
         else:
             y_error_msg(func_name, 'chroma location not supported')
-        yd = core.resize.Spline36(y, y.width / 2, y.height / 2, src_left=sx, src_top=sy)
+        yd = core.resize.Bicubic(y, y.width / 2, y.height / 2, src_left=sx, src_top=sy, filter_param_a=-0.5, filter_param_b=0.25)
         half = join_uv(yd, clip)
         knlm_args_1p = dict()
         knlm_args_1p.update(args_1p)

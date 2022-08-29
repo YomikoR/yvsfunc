@@ -8,8 +8,6 @@ from .misc import y_error_msg
 
 __all__ = [
     'playback',
-    'ab',
-    'pab',
     'show_yuv',
     'show_over_range',
 ]
@@ -30,32 +28,6 @@ def playback(clip: vs.VideoNode, icc: Optional[str] = None, csp: str = '709', in
     Wrapper for iccc.Playback for video playback, like in mpv.
     '''
     return to_rgb(clip).iccc.Playback(display_icc=icc, playback_csp=csp, intent=intent)
-
-
-def ab(clipa: vs.VideoNode, clipb: vs.VideoNode, rgb: bool = True, position: int = 5, matrix_in_s: str = '709') -> vs.VideoNode:
-    '''
-    Naive A-B comparison
-    '''
-    if position is not None:
-        clipa = core.text.FrameNum(clipa, position)
-    if rgb:
-        rgba = to_rgb(clipa, matrix_in_s=matrix_in_s)
-        rgbb = to_rgb(clipb, matrix_in_s=matrix_in_s)
-        return core.std.Interleave([rgba, rgbb])
-    else:
-        return core.std.Interleave([clipa, clipb])
-
-
-def pab(clipa: vs.VideoNode, clipb: vs.VideoNode, position: int = 5, matrix_in_s: Optional[str] = '709', icc: Optional[str] = None, csp: str = '709', intent: str = 'relative') -> vs.VideoNode:
-    '''
-    A-B with playback
-    '''
-    if position is not None:
-        clipa = core.text.FrameNum(clipa, position)
-    rgba = to_rgb(clipa, matrix_in_s=matrix_in_s)
-    rgbb = to_rgb(clipb, matrix_in_s=matrix_in_s)
-    rgbi = core.std.Interleave([rgba, rgbb])
-    return playback(rgbi, icc=icc, csp=csp, intent=intent)
 
 
 def show_yuv(clip: vs.VideoNode) -> vs.VideoNode:

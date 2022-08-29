@@ -18,7 +18,8 @@ __all__ = [
     'gen_timestamps',
 ]
 
-def frame_time(n24: int = 0, n30: int = 0, n60: int = 0, n120: int = 0, n18: int = 0, print_output: bool = False) -> Union[str, int]:
+def frame_time(n24: int = 0, n30: int = 0, n60: int = 0, n120: int = 0, n18: int = 0, print_output: bool = False
+) -> Union[str, int]:
     '''
     Calculate time according to frame rates. \\
     TIVTC occasionally creates 3 consecutive 18 fps frames, so included as well.
@@ -106,7 +107,8 @@ def tdec(clip: vs.VideoNode, **args: Any) -> vs.VideoNode:
     return core.std.FrameEval(iv, partial(_replace_next, c=iv, c2=iv_next), iv)
 
 
-def mdec(clip: vs.VideoNode, drop: Union[int, List[int]], cycle: int = 5, modify_duration: Optional[bool] = None) -> vs.VideoNode:
+def mdec(clip: vs.VideoNode, drop: Union[int, List[int]], cycle: int = 5, modify_duration: Optional[bool] = None
+) -> vs.VideoNode:
     '''
     Manual decimation
     '''

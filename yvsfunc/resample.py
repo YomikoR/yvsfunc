@@ -33,14 +33,27 @@ class ResClip:
 
     Usually, the cropping args are used to represent the effective region of the frame.
     '''
-    def __init__(self, clip: vs.VideoNode, sx: float = 0, sy: float = 0, sw: Optional[float] = None, sh: Optional[float] = None):
+    def __init__(self,
+        clip: vs.VideoNode,
+        sx: float = 0,
+        sy: float = 0,
+        sw: Optional[float] = None,
+        sh: Optional[float] = None
+    ):
         self.clip = clip
         self.sx = sx
         self.sy = sy
         self.sw = fallback(sw, clip.width)
         self.sh = fallback(sh, clip.height)
 
-    def copy(self, clip: Optional[vs.VideoNode] = None, sx: Optional[float] = None, sy: Optional[float] = None, sw: Optional[float] = None, sh: Optional[float] = None) -> 'ResClip':
+    def copy(
+        self,
+        clip: Optional[vs.VideoNode] = None,
+        sx: Optional[float] = None,
+        sy: Optional[float] = None,
+        sw: Optional[float] = None,
+        sh: Optional[float] = None
+    ) -> 'ResClip':
         '''
         Copy with substitutions
         '''
@@ -121,7 +134,20 @@ class ResClip:
 #       upscaled and cropped to kill border ringing (use fdescale)
 
 
-def descale(clip: Union[ResClip, vs.VideoNode], width: int = 1280, height: int = 720, kernel: str = 'bicubic', b: float = 0, c: float = 0.5, taps: int = 3, src_left: float = 0, src_top: float = 0, src_width: Optional[float] = None, src_height: Optional[float] = None, with_diff: bool = False) -> Union[ResClip, List[ResClip]]:
+def descale(
+    clip: Union[ResClip, vs.VideoNode],
+    width: int = 1280,
+    height: int = 720,
+    kernel: str = 'bicubic',
+    b: float = 0,
+    c: float = 0.5,
+    taps: int = 3,
+    src_left: float = 0,
+    src_top: float = 0,
+    src_width: Optional[float] = None,
+    src_height: Optional[float] = None,
+    with_diff: bool = False
+) -> Union[ResClip, List[ResClip]]:
     '''
     A descale wrapper that also returns rescaling error with `with_diff=True`
     '''
@@ -163,7 +189,25 @@ def descale(clip: Union[ResClip, vs.VideoNode], width: int = 1280, height: int =
         return ResClip(depth(down, clip_depth), dst_sx, dst_sy, dst_sw, dst_sh)
 
 
-def bdescale(clip: Union[ResClip, vs.VideoNode], width: int = 1280, height: int = 720, kernel: str = 'bicubic', b: float = 0, c: float = 0.5, taps: int = 3, src_left: float = 0, src_top: float = 0, src_width: Optional[float] = None, src_height: Optional[float] = None, left: int = 0, right: int = 0, top: int = 0, bottom: int = 0, color: Optional[float] = None, with_diff: bool = False) -> Union[vs.VideoNode, List[vs.VideoNode]]:
+def bdescale(
+    clip: Union[ResClip, vs.VideoNode],
+    width: int = 1280,
+    height: int = 720,
+    kernel: str = 'bicubic',
+    b: float = 0,
+    c: float = 0.5,
+    taps: int = 3,
+    src_left: float = 0,
+    src_top: float = 0,
+    src_width: Optional[float] = None,
+    src_height: Optional[float] = None,
+    left: int = 0,
+    right: int = 0,
+    top: int = 0,
+    bottom: int = 0,
+    color: Optional[float] = None,
+    with_diff: bool = False
+) -> Union[vs.VideoNode, List[vs.VideoNode]]:
     '''
     Descale with (black) borders added internally to suppress border ringing. \\
     Cropping args are adjusted accordingly by border inputs, but NOT by the effective resolution. \\
@@ -246,7 +290,21 @@ def bdescale(clip: Union[ResClip, vs.VideoNode], width: int = 1280, height: int 
         return down.clip
 
 
-def fdescale(clip: Union[ResClip, vs.VideoNode], ratio: float, base_width: Optional[int] = None, base_height: Optional[int] = None, kernel: str = 'bicubic', b: float = 0, c: float = 0.5, taps: int = 3, src_left: float = 0, src_top: float = 0, src_width: Optional[float] = None, src_height: Optional[float] = None, with_diff: bool = False) -> Union[ResClip, List[ResClip]]:
+def fdescale(
+    clip: Union[ResClip, vs.VideoNode],
+    ratio: float,
+    base_width: Optional[int] = None,
+    base_height: Optional[int] = None,
+    kernel: str = 'bicubic',
+    b: float = 0,
+    c: float = 0.5,
+    taps: int = 3,
+    src_left: float = 0,
+    src_top: float = 0,
+    src_width: Optional[float] = None,
+    src_height: Optional[float] = None,
+    with_diff: bool = False
+    ) -> Union[ResClip, List[ResClip]]:
     '''
     Descale with a certain ratio, assuming
         1) effective region is the entire input (existing cropping args are discarded) \\
@@ -319,7 +377,14 @@ def nn444(clip, opencl: bool = False, **nnedi3_args: Any) -> vs.VideoNode:
         y_error_msg(func_name, 'format not supported')
 
 
-def interpolate(clip: Union[ResClip, vs.VideoNode], nnedi3: Optional[Callable[..., vs.VideoNode]] = None, eedi3: Optional[Callable[..., vs.VideoNode]] = None, field: Optional[int] = None, dh: bool = True, with_nn: bool = False) -> Union[ResClip, List[ResClip]]:
+def interpolate(
+    clip: Union[ResClip, vs.VideoNode],
+    nnedi3: Optional[Callable[..., vs.VideoNode]] = None,
+    eedi3: Optional[Callable[..., vs.VideoNode]] = None,
+    field: Optional[int] = None,
+    dh: bool = True,
+    with_nn: bool = False
+    ) -> Union[ResClip, List[ResClip]]:
     if isinstance(clip, vs.VideoNode):
         clip = ResClip(clip)
     # Using nnedi3 by default
@@ -355,17 +420,29 @@ def interpolate(clip: Union[ResClip, vs.VideoNode], nnedi3: Optional[Callable[..
         return clip.copy(ip, sy=sy, sh=sh)
 
 
-def intra_aa(clip: vs.VideoNode, nnedi3: Optional[Callable[..., vs.VideoNode]] = None, eedi3: Optional[Callable[..., vs.VideoNode]] = None) -> vs.VideoNode:
+def intra_aa(
+    clip: vs.VideoNode,
+    nnedi3: Optional[Callable[..., vs.VideoNode]] = None,
+    eedi3: Optional[Callable[..., vs.VideoNode]] = None,
+    mode: int = 1
+) -> vs.VideoNode:
     clip = ResClip(clip)
     aa0 = interpolate(clip, nnedi3, eedi3, field=0, dh=False).clip
     aa1 = interpolate(clip, nnedi3, eedi3, field=1, dh=False).clip
     clip.transpose()
     aa2 = interpolate(clip, nnedi3, eedi3, field=0, dh=False).std.Transpose()
     aa3 = interpolate(clip, nnedi3, eedi3, field=1, dh=False).std.Transpose()
-    return core.akarin.Expr([aa0, aa1, aa2, aa3], 'x y z a sort4 dup1 r1! dup2 r2! drop4 r1@ r2@ + 2 /')
+    if mode <= 0:
+        return core.akarin.Expr([aa0, aa1, aa2, aa3, clip.clip], 'x y z a b sort5 dup2 r2! drop5 r2@')
+    else:
+        return core.akarin.Expr([aa0, aa1, aa2, aa3], 'x y z a sort4 dup1 r1! dup2 r2! drop4 r1@ r2@ + 2 /')
 
 
-def aa2x(clip: Union[ResClip, vs.VideoNode], nnedi3: Optional[Callable[..., vs.VideoNode]] = None, eedi3: Optional[Callable[..., vs.VideoNode]] = None) -> ResClip:
+def aa2x(
+    clip: Union[ResClip, vs.VideoNode],
+    nnedi3: Optional[Callable[..., vs.VideoNode]] = None,
+    eedi3: Optional[Callable[..., vs.VideoNode]] = None
+) -> ResClip:
     '''
     The usual 2x filter with nnedi3 and/or eedi3.
     '''
@@ -378,7 +455,12 @@ def aa2x(clip: Union[ResClip, vs.VideoNode], nnedi3: Optional[Callable[..., vs.V
     return up2
 
 
-def ee2x(clip: Union[ResClip, vs.VideoNode], nnedi3: Optional[Callable[..., vs.VideoNode]] = None, eedi3: Optional[Callable[..., vs.VideoNode]] = None, with_nn: bool = False) -> Union[ResClip, List[ResClip]]:
+def ee2x(
+    clip: Union[ResClip, vs.VideoNode],
+    nnedi3: Optional[Callable[..., vs.VideoNode]] = None,
+    eedi3: Optional[Callable[..., vs.VideoNode]] = None,
+    with_nn: bool = False
+) -> Union[ResClip, List[ResClip]]:
     '''
     Compared to `aa2x`, here we use the nnedi3 result for the vcheck of the second interpolation. \\
     Set `with_nn=True` to return the nnedi3 result as well.
@@ -403,7 +485,16 @@ def ee2x(clip: Union[ResClip, vs.VideoNode], nnedi3: Optional[Callable[..., vs.V
         return ee_up2
 
 
-def daa_mod(clip: vs.VideoNode, ref: Optional[vs.VideoNode] = None, opencl: bool = False, b: float = 1, rep1: int = 0, px1: Optional[float] = None, rep2: int = 13, px2: Optional[float] = None) -> vs.VideoNode:
+def daa_mod(
+    clip: vs.VideoNode,
+    ref: Optional[vs.VideoNode] = None,
+    opencl: bool = False,
+    b: float = 1,
+    rep1: int = 0,
+    px1: Optional[float] = None,
+    rep2: int = 13,
+    px2: Optional[float] = None
+) -> vs.VideoNode:
     '''
     Modified from `havsfunc.daa` reducing its default strength. \\
     Sometimes it fixes residual interlacing (with some detail loss). Try `ref=TFM(PP=5)`.
@@ -420,7 +511,8 @@ def daa_mod(clip: vs.VideoNode, ref: Optional[vs.VideoNode] = None, opencl: bool
     return core.std.MergeDiff(dbl, DD)
 
 
-def aa_limit(ref: vs.VideoNode, strong: vs.VideoNode, weak: vs.VideoNode, **lim_args: Any):
+def aa_limit(ref: vs.VideoNode, strong: vs.VideoNode, weak: vs.VideoNode, **lim_args: Any
+) -> vs.VideoNode:
     '''
     Limiting the results of AA
     '''

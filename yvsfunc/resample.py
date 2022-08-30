@@ -433,7 +433,7 @@ def intra_aa(
     aa2 = interpolate(clip, nnedi3, eedi3, field=0, dh=False).std.Transpose()
     aa3 = interpolate(clip, nnedi3, eedi3, field=1, dh=False).std.Transpose()
     if mode <= 0:
-        return core.akarin.Expr([aa0, aa1, aa2, aa3, clip.clip], 'x y z a b sort5 dup2 r2! drop5 r2@')
+        return core.akarin.Expr([aa0, aa1, aa2, aa3, clip.std.Transpose()], 'x y z a b sort5 dup2 r2! drop5 r2@')
     else:
         return core.akarin.Expr([aa0, aa1, aa2, aa3], 'x y z a sort4 dup1 r1! dup2 r2! drop4 r1@ r2@ + 2 /')
 

@@ -1,7 +1,7 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict
 import vapoursynth as vs
 core = vs.core
-from vsutil import depth, get_subsampling, get_y
+from vsutil import get_subsampling, get_y
 
 from .misc import y_error_msg
 from .planes import join_uv

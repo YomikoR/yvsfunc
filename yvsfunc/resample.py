@@ -1,4 +1,3 @@
-# I don't use znedi3...
 from typing import Any, Callable, Dict, List, Optional, Union
 import vapoursynth as vs
 core = vs.core
@@ -423,8 +422,7 @@ def interpolate(
 def intra_aa(
     clip: vs.VideoNode,
     nnedi3: Optional[Callable[..., vs.VideoNode]] = None,
-    eedi3: Optional[Callable[..., vs.VideoNode]] = None,
-    mode: int = 1
+    eedi3: Optional[Callable[..., vs.VideoNode]] = None
 ) -> vs.VideoNode:
     clip = ResClip(clip)
     aa0 = interpolate(clip, nnedi3, eedi3, field=0, dh=False).clip
@@ -432,10 +430,7 @@ def intra_aa(
     clip.transpose()
     aa2 = interpolate(clip, nnedi3, eedi3, field=0, dh=False).std.Transpose()
     aa3 = interpolate(clip, nnedi3, eedi3, field=1, dh=False).std.Transpose()
-    if mode <= 0:
-        return core.akarin.Expr([aa0, aa1, aa2, aa3, clip.std.Transpose()], 'x y z a b sort5 dup2 r2! drop5 r2@')
-    else:
-        return core.akarin.Expr([aa0, aa1, aa2, aa3], 'x y z a sort4 dup1 r1! dup2 r2! drop4 r1@ r2@ + 2 /')
+    return core.akarin.Expr([aa0, aa1, aa2, aa3], 'x y z a sort4 dup1 r1! dup2 r2! drop4 r1@ r2@ + 2 /')
 
 
 def aa2x(

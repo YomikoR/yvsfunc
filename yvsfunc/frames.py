@@ -1,4 +1,4 @@
-from typing import Any, Callable, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 import vapoursynth as vs
 core = vs.core
 import sys
@@ -125,7 +125,7 @@ def clip_time(clip: vs.VideoNode, default_duration: float = 1001 / 24) -> float:
     Total time of clip in ms
     '''
     total_ms: float = 0
-    for n, f in enumerate(clip.frames()):
+    for f in clip.frames(close=True):
         try:
             dur_num = f.props['_DurationNum']
             dur_den = f.props['_DurationDen']
@@ -143,7 +143,7 @@ def gen_timestamps(clip: vs.VideoNode, output_file: str, fallback_fps_num: int =
     num_frames = len(clip)
 
     print('Reading frames for timestamps creation...', file=sys.stderr)
-    for n, f in enumerate(clip.frames()):
+    for n, f in enumerate(clip.frames(close=True)):
         print(f'\r{n + 1}/{num_frames}', end='', file=sys.stderr)
         try:
             dur_num = f.props['_DurationNum']

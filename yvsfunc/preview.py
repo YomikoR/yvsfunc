@@ -12,14 +12,14 @@ __all__ = [
     'show_over_range',
 ]
 
-def to_rgb(clip: vs.VideoNode, output_depth: int = 16, matrix_in_s: str = '709') -> vs.VideoNode:
+def to_rgb(clip: vs.VideoNode, output_depth: int = 16) -> vs.VideoNode:
     '''
     Default output is 16-bit
     '''
     if clip.format.color_family == vs.RGB:
         return depth(clip, 16)
     else:
-        rgbs: vs.VideoNode = core.resize.Spline36(clip, format=vs.RGBS, matrix_in_s=matrix_in_s)
+        rgbs = core.resize.Spline36(clip, format=vs.RGBS)
         return depth(rgbs, output_depth)
 
 

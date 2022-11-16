@@ -173,7 +173,7 @@ def descale(
     dst_sy = src_top  + ratio_h * clip.sy
     dst_sh =            ratio_h * clip.sh
 
-    clip_depth = clip.clip.bits_per_sample
+    clip_depth = clip.clip.format.bits_per_sample
     y32 = clip.std.ShufflePlanes(0, vs.GRAY).fmtc.bitdepth(bits=32)
     kernel = kernel.lower()
     if kernel.startswith('de'):

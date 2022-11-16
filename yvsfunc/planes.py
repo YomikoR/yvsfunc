@@ -1,14 +1,12 @@
+from __future__ import annotations
 from typing import List, Optional
 import vapoursynth as vs
 core = vs.core
-from vsutil import depth, get_y
 
 __all__ = [
     'sep_fields',
     'weave',
     'apply_borders',
-    'get_y32',
-    'join_uv',
 ]
 
 def sep_fields(clip: vs.VideoNode, tff: bool = True, progressive: bool = True
@@ -39,14 +37,3 @@ def apply_borders(
 ) -> vs.VideoNode:
     crop = core.std.Crop(clip, left=left, top=top, right=right, bottom=bottom)
     return core.std.AddBorders(crop, left=left, top=top, right=right, bottom=bottom, color=color)
-
-
-def get_y32(clip: vs.VideoNode) -> vs.VideoNode:
-    if clip.format.color_family == vs.RGB:
-        return core.resize.Spline36(clip, format=vs.GRAYS, matrix_s='709')
-    else:
-        return depth(get_y(clip), 32)
-
-
-def join_uv(clip_y: vs.VideoNode, clip_uv: vs.VideoNode) -> vs.VideoNode:
-    return core.std.ShufflePlanes([clip_y, clip_uv], [0, 1, 2], vs.YUV)

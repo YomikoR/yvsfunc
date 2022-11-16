@@ -20,5 +20,3 @@ ABB = partial(apply_borders, color=None)
 from .preview import *
 
 from .resample import *
-
-from .vpy import *

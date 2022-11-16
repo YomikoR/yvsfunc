@@ -1,13 +1,11 @@
+from __future__ import annotations
 from typing import Any, Callable, Dict, List, Optional, Union
 import vapoursynth as vs
 core = vs.core
-import vsutil.types
-from vsutil import depth, fallback, get_depth, get_subsampling, join, plane, split
 from functools import partial
 from math import ceil, floor
 
-from .misc import y_error_msg, repair, bic_blur
-from .planes import get_y32
+from .misc import repair, bic_blur
 
 __all__ = [
     'ResClip',
@@ -42,8 +40,8 @@ class ResClip:
         self.clip = clip
         self.sx = sx
         self.sy = sy
-        self.sw = fallback(sw, clip.width)
-        self.sh = fallback(sh, clip.height)
+        self.sw = clip.width if sw is None else sw
+        self.sh = clip.height if sh is None else sh
 
     def copy(
         self,
@@ -52,15 +50,15 @@ class ResClip:
         sy: Optional[float] = None,
         sw: Optional[float] = None,
         sh: Optional[float] = None
-    ) -> 'ResClip':
+    ) -> ResClip:
         '''
         Copy with substitutions
         '''
-        clip = fallback(clip, self.clip)
-        sx = fallback(sx, self.sx)
-        sy = fallback(sy, self.sy)
-        sw = fallback(sw, self.sw)
-        sh = fallback(sh, self.sh)
+        clip = self.clip if clip is None else clip
+        sx = self.sx if sx is None else sx
+        sy = self.sy if sy is None else sy
+        sw = self.sw if sw is None else sw
+        sh = self.sh if sh is None else sh
         return ResClip(clip, sx=sx, sy=sy, sw=sw, sh=sh)
 
     def width(self) -> int:
@@ -85,26 +83,36 @@ class ResClip:
             src_height = self.sh,
         )
 
-    def transpose(self):
-        self.clip = core.std.Transpose(self.clip)
-        self.sx, self.sy = self.sy, self.sx
-        self.sw, self.sh = self.sh, self.sw
+    def transpose(self, inplace: bool = True):
+        if inplace:
+            self.clip = core.std.Transpose(self.clip)
+            self.sx, self.sy = self.sy, self.sx
+            self.sw, self.sh = self.sh, self.sw
+        else:
+            ret = self.copy()
+            ret.transpose()
+            return ret
 
-    def crop(self, left: int = 0, right: int = 0, top: int = 0, bottom: int = 0):
-        if left == 0 and right == 0 and top == 0 and bottom == 0:
-            return
-        self.clip = core.std.Crop(self.clip, left=left, right=right, top=top, bottom=bottom)
-        self.sx = self.sx - left
-        self.sy = self.sy - top
+    def crop(self, left: int = 0, right: int = 0, top: int = 0, bottom: int = 0, inplace: bool = True):
+        if inplace:
+            if left == 0 and right == 0 and top == 0 and bottom == 0:
+                return
+            self.clip = self.std.Crop(left=left, right=right, top=top, bottom=bottom)
+            self.sx = self.sx - left
+            self.sy = self.sy - top
+        else:
+            ret = self.copy()
+            ret.crop(left=left, right=right, top=top, bottom=bottom)
+            return ret
 
     def show(self) -> vs.VideoNode:
-        return core.text.Text(self.clip, f'sx={self.sx}\nsy={self.sy}\nsw={self.sw}\nsh={self.sh}')
+        return self.text.Text(f'sx={self.sx}\nsy={self.sy}\nsw={self.sw}\nsh={self.sh}')
 
     def bicubic(self, width: int, height: int, b: float = 0, c: float = 0.5, **resizer_args) -> vs.VideoNode:
         args = self.make_resize_dict()
         args.update(resizer_args)
         args.update(dict(width=width, height=height, filter_param_a=b, filter_param_b=c))
-        return core.resize.Bicubic(self.clip, **args)
+        return self.resize.Bicubic(**args)
 
     def hermite(self, width: int, height: int, **resizer_args) -> vs.VideoNode:
         return self.bicubic(width, height, b=0, c=0, **resizer_args)
@@ -113,13 +121,13 @@ class ResClip:
         args = self.make_resize_dict()
         args.update(resizer_args)
         args.update(dict(width=width, height=height))
-        return core.resize.Spline36(self.clip, **args)
+        return self.resize.Spline36(**args)
 
     def lanczos(self, width: int, height: int, taps: int = 3, **resizer_args) -> vs.VideoNode:
         args = self.make_resize_dict()
         args.update(resizer_args)
         args.update(dict(width=width, height=height, filter_param_a=taps))
-        return core.resize.Lanczos(self.clip, **args)
+        return self.resize.Lanczos(**args)
 
     def __getattr__(self, name: str):
         try:
@@ -150,12 +158,12 @@ def descale(
     '''
     A descale wrapper that also returns rescaling error with `with_diff=True`
     '''
-    func_name = 'descale'
-
     if isinstance(clip, vs.VideoNode):
         clip = ResClip(clip)
-    src_width = fallback(src_width, width)
-    src_height = fallback(src_height, height)
+    if src_width is None:
+        src_width = width
+    if src_height is None:
+        src_height = height
 
     ratio_w = src_width / clip.width()
     ratio_h = src_height / clip.height()
@@ -165,27 +173,27 @@ def descale(
     dst_sy = src_top  + ratio_h * clip.sy
     dst_sh =            ratio_h * clip.sh
 
-    clip_depth = get_depth(clip.clip)
-    y32 = get_y32(clip.clip)
+    clip_depth = clip.clip.bits_per_sample
+    y32 = clip.std.ShufflePlanes(0, vs.GRAY).fmtc.bitdepth(bits=32)
     kernel = kernel.lower()
     if kernel.startswith('de'):
         kernel = kernel[2:]
 
-    descaler = _get_descaler(func_name, kernel, b, c, taps)
+    descaler = _get_descaler(kernel, b, c, taps)
     down = descaler(y32, width, height, src_left=src_left, src_top=src_top, src_width=src_width, src_height=src_height)
     if with_diff:
-        scaler = _get_scaler(func_name, kernel, b, c, taps)
+        scaler = _get_scaler(kernel, b, c, taps)
         up = scaler(down, y32.width, y32.height, src_left=src_left, src_top=src_top, src_width=src_width, src_height=src_height)
         diff = core.std.Expr([y32, up], 'x y - abs')
         if clip_depth != 32:
-            down = depth(down, clip_depth)
-            diff = depth(diff, clip_depth, range_in=vsutil.types.Range.LIMITED, range=vsutil.types.Range.FULL)
+            down = down.fmtc.bitdepth(bits=32)
+            diff = diff.fmtc.bitdepth(bits=32, fulls=False, fulld=True)
         return [
             ResClip(down, dst_sx, dst_sy, dst_sw, dst_sh),
             ResClip(diff, clip.sx, clip.sy, clip.sw, clip.sh)
         ]
     else:
-        return ResClip(depth(down, clip_depth), dst_sx, dst_sy, dst_sw, dst_sh)
+        return ResClip(down.fmtc.bitdepth(bits=clip_depth), dst_sx, dst_sy, dst_sw, dst_sh)
 
 
 def bdescale(
@@ -220,13 +228,12 @@ def bdescale(
             down = descale(clip, width=width, height=height, kernel=kernel, b=b, c=c, taps=taps, src_left=src_left, src_top=src_top, src_width=src_width, src_height=src_height, with_diff=with_diff)
             return down.clip
 
-    src_width = fallback(src_width, width)
-    src_height = fallback(src_height, height)
+    if src_width is None:
+        src_width = width
+    if src_height is None:
+        src_height = height
 
-    if isinstance(clip, vs.VideoNode):
-        y = ResClip(plane(clip, 0))
-    else:
-        y = ResClip(plane(clip.clip, 0))
+    y = ResClip(clip.std.ShufflePlanes(0, vs.GRAY))
 
     ratio_w = src_width / y.width()
     ratio_h = src_height / y.height()
@@ -277,7 +284,7 @@ def bdescale(
         top = top,
         bottom = bottom,
     )
-    y.clip = core.std.AddBorders(y.clip, color=color, **src_border_args)
+    y.clip = y.std.AddBorders(color=color, **src_border_args)
     if with_diff:
         down, diff = descale(y, kernel=kernel, b=b, c=c, taps=taps, with_diff=True, **descale_cropping_args)
         down.crop(**descale_border_args)
@@ -312,14 +319,14 @@ def fdescale(
     We need at least the parities of base_width and base_height. Default values are multiples of 16 and 18, respectively. A good starting point in practice may be 1536x864.
     '''
     if ratio <= 0 or ratio >= 1:
-        y_error_msg('fdescale', 'ratio must be within (0, 1)')
-    if isinstance(clip, ResClip):
-        clip = clip.clip
-    y = ResClip(plane(clip, 0)) # NOTE cropping cleared
+        raise ValueError('fdescale: ratio must be within (0, 1)')
+    y = ResClip(clip.std.ShufflePlanes(0, vs.GRAY)) # NOTE cropping cleared
     src_width = y.width() * ratio
     src_height = y.height() * ratio
-    base_width = fallback(base_width, ceil(src_width / 16) * 16)
-    base_height = fallback(base_height, ceil(src_height / 18) * 18)
+    if base_width is None:
+        base_width = ceil(src_width / 16) * 16
+    if base_height is None:
+        base_height = ceil(src_height / 18) * 18
     # Strip
     width = base_width - 2 * floor((base_width - src_width) / 2)
     height = base_height - 2 * floor((base_height - src_height) / 2)
@@ -355,25 +362,24 @@ def nn444(clip, opencl: bool = False, **nnedi3_args: Any) -> vs.VideoNode:
     '''
     Use nnedi3 to upscale chroma planes. Only works for MPEG2 inputs.
     '''
-    func_name = 'nn444'
     if clip.format.color_family != vs.YUV:
-        y_error_msg(func_name, 'format not supported')
-    if get_subsampling(clip) == '420':
+        raise ValueError('nn444: format not supported')
+    if clip.format.subsampling_w == 1 and clip.format.subsampling_h == 1:
         nnedi3 = get_nnedi3(opencl=opencl, **nnedi3_args)
-        y, u, v = split(clip)
+        y, u, v = core.std.SplitPlanes(clip)
         # Interleave to save number of filter calls
         uv = core.std.Interleave([u, v])
         uv_up1 = nnedi3(uv, field=0, dh=True).std.Transpose().resize.Spline36(src_left=0.5)
         uv_up2 = nnedi3(uv_up1, field=1, dh=True).std.Transpose()
-        return join([y, uv_up2[0::2], uv_up2[1::2]])
-    elif get_subsampling(clip) == '422':
+        return core.std.ShufflePlanes([y, uv_up2[0::2], uv_up2[1::2]], [0, 0, 0], vs.YUV)
+    elif clip.format.subsampling_w == 1 and clip.format.subsampling_h == 0: # 422
         nnedi3 = get_nnedi3(opencl=opencl, **nnedi3_args)
-        y, u, v = split(clip)
+        y, u, v = core.std.SplitPlanes(clip)
         uv = core.std.Interleave([u, v])
         uv_up = nnedi3(uv.std.Transpose(), field=1, dh=True).std.Transpose()
-        return join([y, uv_up[0::2], uv_up[1::2]])
+        return core.std.ShufflePlanes([y, uv_up[0::2], uv_up[1::2]], [0, 0, 0], vs.YUV)
     else:
-        y_error_msg(func_name, 'format not supported')
+        raise ValueError('nn444: format not supported')
 
 
 def interpolate(
@@ -461,7 +467,7 @@ def ee2x(
     Set `with_nn=True` to return the nnedi3 result as well.
     '''
     if nnedi3 is None or eedi3 is None:
-        y_error_msg('ee2x', 'both nnedi3 and eedi3 must be available')
+        raise ValueError('ee2x: both nnedi3 and eedi3 must be available')
     if isinstance(clip, vs.VideoNode):
         clip = ResClip(clip)
     # First interpolation
@@ -521,7 +527,7 @@ def aa_limit(ref: vs.VideoNode, strong: vs.VideoNode, weak: vs.VideoNode, **lim_
 ### Descale helpers
 
 
-def _get_descaler(func_name: str, kernel: str, b: float, c: float, taps: int) -> Callable[[Any], vs.VideoNode]:
+def _get_descaler(kernel: str, b: float, c: float, taps: int) -> Callable[[Any], vs.VideoNode]:
     if kernel == 'bilinear':
         return core.descale.Debilinear
     elif kernel == 'bicubic':
@@ -535,10 +541,10 @@ def _get_descaler(func_name: str, kernel: str, b: float, c: float, taps: int) ->
     elif kernel == 'spline64':
         return core.descale.Despline64
     else:
-        y_error_msg(func_name, 'invalid kernel specified')
+        raise ValueError(f'invalid kernel specified: {kernel}')
 
 
-def _get_scaler(func_name: str, kernel: str, b: float, c: float, taps: int) -> Callable[[Any], vs.VideoNode]:
+def _get_scaler(kernel: str, b: float, c: float, taps: int) -> Callable[[Any], vs.VideoNode]:
     if kernel == 'bilinear':
         return core.resize.Bilinear
     elif kernel == 'bicubic':
@@ -552,4 +558,4 @@ def _get_scaler(func_name: str, kernel: str, b: float, c: float, taps: int) -> C
     elif kernel == 'spline64':
         return core.resize.Spline64
     else:
-        y_error_msg(func_name, 'invalid kernel specified')
+        raise ValueError(f'invalid kernel specified: {kernel}')

@@ -22,6 +22,8 @@ __all__ = [
     'ee2x',
     'daa_mod',
     'aa_limit',
+    'rgb2opp',
+    'opp2rgb',
 ]
 
 class ResClip:
@@ -538,6 +540,19 @@ def aa_limit(ref: vs.VideoNode, strong: vs.VideoNode, weak: vs.VideoNode, **lim_
     args.update(lim_args)
     lim = mvf.LimitFilter(strong, weak, **args)
     return core.std.Expr([strong, weak, ref, lim], 'x z - y z - xor y a ?')
+
+
+def rgb2opp(clip: vs.VideoNode) -> vs.VideoNode:
+    opp = core.fmtc.matrix(clip, fulld=True, coef=[1/3,1/3,1/3,0,1/2,0,-1/2,0,1/4,-1/2,1/4,0]) # NOTE the matrix used by BM3D, see comments in #27
+    opp = core.std.SetFrameProps(opp, _Matrix=vs.MATRIX_UNSPECIFIED, BM3D_OPP=1)
+    return opp
+
+
+def opp2rgb(clip: vs.VideoNode) -> vs.VideoNode:
+    rgb = core.fmtc.matrix(clip, fulld=True, coef=[1,1,2/3,0,1,0,-4/3,0,1,-1,2/3,0])
+    rgb = core.std.SetFrameProps(rgb, _Matrix=vs.MATRIX_RGB)
+    rgb = core.std.RemoveFrameProps(rgb, 'BM3D_OPP')
+    return rgb
 
 
 ### Descale helpers

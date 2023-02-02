@@ -11,6 +11,7 @@ __all__ = [
     'frame_time',
     'qp_read',
     'qp_splice',
+    'qp_chapter',
     'join_clips',
     'cut_clips',
     'tdec',
@@ -70,6 +71,50 @@ def qp_splice(clips: List[vs.VideoNode], qp_output: str, suffix: str = 'K'):
         for clip in clips:
             qpf.write(f'{frame_num} ' + suffix + '\n')
             frame_num += len(clip)
+
+
+def qp_chapter(qpfile: str, timestamps: str, output_file: str, language: str = 'jpn'):
+    '''
+    Generate XML chapter file from qpfile and timestamps
+    '''
+
+    # Load timestamps
+    ts = []
+    with open(timestamps, 'r') as f:
+        lines = f.readlines()
+        for line in lines:
+            if len(line) > 0 and line[0] != '#':
+                try:
+                    ms360 = float(line) * 360
+                    ts.append(round(ms360))
+                except ValueError:
+                    pass
+
+    # Load qpfile
+    qp = qp_read(qpfile)
+
+    # Write chapter in XML
+    with open(output_file, 'w') as f:
+        f.write(r'<?xml version="1.0"?>' + '\n')
+        f.write(r'<!-- <!DOCTYPE Chapters SYSTEM "matroskachapters.dtd"> -->' + '\n')
+        f.write(r'<Chapters>' + '\n' + r'<EditionEntry>' + '\n')
+        for qpn in qp:
+            ms360 = ts[qpn]
+            full_ms = int(round(ms360 / 360))
+            ms = full_ms % 1000
+            full_secs = full_ms // 1000
+            secs = full_secs % 60
+            full_mins = full_secs // 60
+            mins = full_mins % 60
+            hours = full_mins // 60
+            time_str = f'{hours:02}:{mins:02}:{secs:02}.{ms:03}'
+            f.write(r'<ChapterAtom>' + '\n' + r'<ChapterDisplay>' + '\n')
+            f.write(r'<ChapterString></ChapterString>' + '\n')
+            f.write(r'<ChapterLanguage>' + language + r'</ChapterLanguage>' + '\n')
+            f.write(r'</ChapterDisplay>' + '\n')
+            f.write(r'<ChapterTimeStart>' + time_str + r'</ChapterTimeStart>' + '\n')
+            f.write(r'</ChapterAtom>' + '\n')
+        f.write(r'</EditionEntry>' + '\n' + r'</Chapters>')
 
 
 def join_clips(clips: List[vs.VideoNode]) -> Tuple[vs.VideoNode, List[int]]:

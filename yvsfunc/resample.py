@@ -123,11 +123,27 @@ class ResClip:
         args.update(dict(width=width, height=height))
         return self.resize.Spline36(**args)
 
+    def spline64(self, width: int, height: int, **resizer_args) -> vs.VideoNode:
+        args = self.make_resize_dict()
+        args.update(resizer_args)
+        args.update(dict(width=width, height=height))
+        return self.resize.Spline64(**args)
+
     def lanczos(self, width: int, height: int, taps: int = 3, **resizer_args) -> vs.VideoNode:
         args = self.make_resize_dict()
         args.update(resizer_args)
         args.update(dict(width=width, height=height, filter_param_a=taps))
         return self.resize.Lanczos(**args)
+
+    def double(self, clip2x: vs.VideoNode):
+        '''
+        Use it for centered doubling, e.g. Waifu2x
+        '''
+        self.clip = clip2x
+        self.sx *= 2
+        self.sy *= 2
+        self.sw *= 2
+        self.sh *= 2
 
     def __getattr__(self, name: str):
         try:

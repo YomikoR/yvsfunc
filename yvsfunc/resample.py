@@ -16,7 +16,6 @@ __all__ = [
     'get_nnedi3cl',
     'get_eedi3',
     'get_eedi3cl',
-    'nn444',
     'intra_aa',
     'aa2x',
     'ee2x',
@@ -374,30 +373,6 @@ def get_eedi3(opencl: bool = False, **eedi3_args: Any) -> Callable[..., vs.Video
 
 def get_eedi3cl(**eedi3_args) -> Callable[..., vs.VideoNode]:
     return get_eedi3(opencl=True, **eedi3_args)
-
-
-def nn444(clip, opencl: bool = False, **nnedi3_args: Any) -> vs.VideoNode:
-    '''
-    Use nnedi3 to upscale chroma planes. Only works for MPEG2 inputs.
-    '''
-    if clip.format.color_family != vs.YUV:
-        raise ValueError('nn444: format not supported')
-    if clip.format.subsampling_w == 1 and clip.format.subsampling_h == 1:
-        nnedi3 = get_nnedi3(opencl=opencl, **nnedi3_args)
-        y, u, v = core.std.SplitPlanes(clip)
-        # Interleave to save number of filter calls
-        uv = core.std.Interleave([u, v])
-        uv_up1 = nnedi3(uv, field=0, dh=True).std.Transpose().resize.Spline36(src_left=0.5)
-        uv_up2 = nnedi3(uv_up1, field=1, dh=True).std.Transpose()
-        return core.std.ShufflePlanes([y, uv_up2[0::2], uv_up2[1::2]], [0, 0, 0], vs.YUV)
-    elif clip.format.subsampling_w == 1 and clip.format.subsampling_h == 0: # 422
-        nnedi3 = get_nnedi3(opencl=opencl, **nnedi3_args)
-        y, u, v = core.std.SplitPlanes(clip)
-        uv = core.std.Interleave([u, v])
-        uv_up = nnedi3(uv.std.Transpose(), field=1, dh=True).std.Transpose()
-        return core.std.ShufflePlanes([y, uv_up[0::2], uv_up[1::2]], [0, 0, 0], vs.YUV)
-    else:
-        raise ValueError('nn444: format not supported')
 
 
 def interpolate(

@@ -11,6 +11,7 @@ __all__ = [
     'pl_deband',
     'DescaleAA_mask',
     'non_telop_mask',
+    'make_rgb_mask',
 ]
 
 # https://github.com/dnjulek/jvsfunc/blob/164b02aad92d746fed2d56207868ebbe91caa38c/jvsfunc.py#L50-L66
@@ -176,3 +177,10 @@ def non_telop_mask(
             thr = [thr] * 3
     diff = core.std.Expr([s, n], 'x y - abs')
     return core.std.Binarize(diff, thr if s.format.num_planes == 3 else thr[0])
+
+
+def make_rgb_mask(clip: vs.VideoNode, mask_func: Callable[[vs.VideoNode], vs.VideoNode], op: int = 1) -> vs.VideoNode:
+    rgb = core.resize.Bicubic(clip, format=vs.RGB48, matrix_in_s='709')
+    rgbi = core.std.Interleave(core.std.SplitPlanes(rgb))
+    maski = mask_func(rgbi)
+    return core.akarin.Expr([maski[0::3], maski[1::3], maski[2::3]], f'x y z sort3 dup{op} res! drop3 res@')

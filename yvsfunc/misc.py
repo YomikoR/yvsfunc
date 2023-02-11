@@ -58,8 +58,18 @@ def repair(clip: vs.VideoNode, repairclip: vs.VideoNode, mode: int = 1, pixel: O
 
 def bb_ref(clip: vs.VideoNode, left: int = 0, top: int = 0, right: int = 0, bottom: int = 0, **bbmod_args) -> vs.VideoNode:
     from awsmfunc import bbmod
-    ref = bbmod(clip, top=top, bottom=bottom, left=left, right=right, **bbmod_args)
-    return core.edgefixer.Reference(clip, ref=ref, top=top, bottom=bottom, left=left, right=right)
+    def _bb_ref(clip: vs.VideoNode, left: int = 0, top: int = 0, right: int = 0, bottom: int = 0, radius: int = 0, **bbmod_args) -> vs.VideoNode:
+        ref = bbmod(clip, top=top, bottom=bottom, left=left, right=right, **bbmod_args)
+        return core.edgefixer.Reference(clip, ref=ref, top=top, bottom=bottom, left=left, right=right, radius=radius)
+    if left > 0:
+        clip = _bb_ref(clip, left=left, radius=left, **bbmod_args)
+    if top > 0:
+        clip = _bb_ref(clip, top=top, radius=top, **bbmod_args)
+    if right > 0:
+        clip = _bb_ref(clip, right=right, radius=right, **bbmod_args)
+    if bottom > 0:
+        clip = _bb_ref(clip, bottom=bottom, radius=bottom, **bbmod_args)
+    return clip
 
 
 def bic_blur(clip: vs.VideoNode, b: float = 1, it: int = 1) -> vs.VideoNode:

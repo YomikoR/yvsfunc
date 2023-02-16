@@ -17,7 +17,7 @@ def to_rgb(clip: vs.VideoNode, output_depth: int = 16) -> vs.VideoNode:
     if clip.format.color_family == vs.RGB:
         return core.fmtc.bitdepth(clip, bits=16)
     else:
-        rgbs = core.resize.Spline36(clip, format=vs.RGBS)
+        rgbs = core.resize.Spline36(clip, format=vs.RGBS, matrix_in_s='709')
         return core.fmtc.bitdepth(rgbs, bits=output_depth)
 
 
@@ -25,7 +25,7 @@ def playback(clip: vs.VideoNode, icc: Optional[str] = None, csp: str = '709', in
     '''
     Wrapper for iccc.Playback for video playback, like in mpv.
     '''
-    return to_rgb(clip).iccc.Playback(display_icc=icc, playback_csp=csp, intent=intent)
+    return to_rgb(clip).iccc.Playback(display_icc=icc, csp=csp, intent=intent)
 
 
 def show_yuv(clip: vs.VideoNode) -> vs.VideoNode:

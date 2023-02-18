@@ -136,6 +136,12 @@ class ResClip:
         args.update(dict(width=width, height=height, filter_param_a=taps))
         return self.resize.Lanczos(**args)
 
+    def bilinear(self, width: int, height: int, **resizer_args) -> vs.VideoNode:
+        args = self.make_resize_dict()
+        args.update(resizer_args)
+        args.update(dict(width=width, height=height))
+        return self.resize.Bilinear(**args)
+
     def double(self, clip2x: vs.VideoNode):
         '''
         Use it for centered doubling, e.g. Waifu2x

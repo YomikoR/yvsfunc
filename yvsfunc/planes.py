@@ -6,7 +6,6 @@ core = vs.core
 __all__ = [
     'sep_fields',
     'weave',
-    'apply_borders',
 ]
 
 def sep_fields(clip: vs.VideoNode, tff: bool = True, progressive: bool = True
@@ -25,15 +24,3 @@ def weave(clip: vs.VideoNode, clip2: Optional[vs.VideoNode] = None, progressive:
         return core.std.SetFrameProp(wv, '_FieldBased', intval=0)
     else:
         return wv
-
-
-def apply_borders(
-    clip: vs.VideoNode,
-    left: int = 0,
-    top: int = 0,
-    right: int = 0,
-    bottom: int = 0,
-    color: Optional[int] = None
-) -> vs.VideoNode:
-    crop = core.std.Crop(clip, left=left, top=top, right=right, bottom=bottom)
-    return core.std.AddBorders(crop, left=left, top=top, right=right, bottom=bottom, color=color)

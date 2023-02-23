@@ -7,6 +7,7 @@ from .frames import *
 FT = frame_time
 
 from .misc import *
+ABB = partial(apply_borders, color=None)
 
 try:
     import numpy as np
@@ -15,7 +16,6 @@ except ImportError:
     pass
 
 from .planes import *
-ABB = partial(apply_borders, color=None)
 
 from .preview import *
 

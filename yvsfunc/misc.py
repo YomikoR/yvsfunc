@@ -12,6 +12,8 @@ __all__ = [
     'DescaleAA_mask',
     'non_telop_mask',
     'make_rgb_mask',
+    'apply_borders',
+    'neutralize_rgb_shift',
 ]
 
 # https://github.com/dnjulek/jvsfunc/blob/164b02aad92d746fed2d56207868ebbe91caa38c/jvsfunc.py#L50-L66
@@ -194,3 +196,23 @@ def make_rgb_mask(clip: vs.VideoNode, mask_func: Callable[[vs.VideoNode], vs.Vid
     rgbi = core.std.Interleave(core.std.SplitPlanes(rgb))
     maski = mask_func(rgbi)
     return core.akarin.Expr([maski[0::3], maski[1::3], maski[2::3]], f'x y z sort3 dup{op} res! drop3 res@')
+
+
+def apply_borders(
+    clip: vs.VideoNode,
+    left: int = 0,
+    top: int = 0,
+    right: int = 0,
+    bottom: int = 0,
+    color: Optional[int] = None
+) -> vs.VideoNode:
+    crop = core.std.Crop(clip, left=left, top=top, right=right, bottom=bottom)
+    return core.std.AddBorders(crop, left=left, top=top, right=right, bottom=bottom, color=color)
+
+
+def neutralize_rgb_shift(
+    shift: list[float],
+    coef: list[float] = [0.2126, 0.7152, 0.0722] # Default 709
+) -> list[float]:
+    tot = shift[0] * coef[0] + shift[1] * coef[1] + shift[2] * coef[2]
+    return [v - tot for v in shift]

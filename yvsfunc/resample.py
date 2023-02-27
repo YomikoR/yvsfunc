@@ -524,12 +524,12 @@ def aa_limit(ref: vs.VideoNode, strong: vs.VideoNode, weak: vs.VideoNode, **lim_
 
 
 def rgb2opp(clip: vs.VideoNode, normalize: bool = False) -> vs.VideoNode:
-    ''' Set normalize=True if assuming the Gaussian noise on R, G and B planes are iid, and the same level will be kept in the output
+    ''' Set normalize=True if assuming the Gaussian noise on R, G and B planes are iid, and the noise levels in channels of the output are to be the same
         Otherwise output is linearly scaled to fit into common YUV ranges
     '''
     assert clip.format.id == vs.RGBS
     if normalize:
-        coef = [1/sqrt(3), 1/sqrt(3), 1/sqrt(3), 0, 1/sqrt(2), -1/sqrt(2), 0, 0, 1/sqrt(6), 1/sqrt(6), -2/sqrt(6), 0]
+        coef = [1/3, 1/3, 1/3, 0, 1/sqrt(6), -1/sqrt(6), 0, 0, 1/sqrt(18), 1/sqrt(18), -2/sqrt(18), 0]
     else:
         coef = [1/3, 1/3, 1/3, 0, 1/2, -1/2, 0, 0, 1/4, 1/4, -1/2, 0]
     opp = core.fmtc.matrix(clip, fulls=True, fulld=True, col_fam=vs.YUV, coef=coef)
@@ -540,7 +540,7 @@ def rgb2opp(clip: vs.VideoNode, normalize: bool = False) -> vs.VideoNode:
 def opp2rgb(clip: vs.VideoNode, normalize: bool = False) -> vs.VideoNode:
     assert clip.format.id == vs.YUV444PS
     if normalize:
-        coef = [1/sqrt(3), 1/sqrt(2), 1/sqrt(6), 0, 1/sqrt(3), -1/sqrt(2), 1/sqrt(6), 0, 1/sqrt(3), 0, -2/sqrt(6), 0]
+        coef = [1, sqrt(3/2), 1/sqrt(2), 0, 1, -sqrt(3/2), 1/sqrt(2), 0, 1, 0, -sqrt(2), 0]
     else:
         coef = [1, 1, 2/3, 0, 1, -1, 2/3, 0, 1, 0, -4/3, 0]
     rgb = core.fmtc.matrix(clip, fulls=True, fulld=True, col_fam=vs.RGB, coef=coef)

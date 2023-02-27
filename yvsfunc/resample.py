@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, List, Optional, Union
 import vapoursynth as vs
 core = vs.core
 from functools import partial
-from math import ceil, floor
+from math import ceil, floor, sqrt
 
 from .misc import repair, bic_blur
 
@@ -523,15 +523,26 @@ def aa_limit(ref: vs.VideoNode, strong: vs.VideoNode, weak: vs.VideoNode, **lim_
     return core.std.Expr([strong, weak, ref, lim], 'x z - y z - xor y a ?')
 
 
-def rgb2opp(clip: vs.VideoNode) -> vs.VideoNode:
+def rgb2opp(clip: vs.VideoNode, normalize: bool = False) -> vs.VideoNode:
+    ''' Set normalize=True if assuming the Gaussian noise on R, G and B planes are iid, and the same level will be kept in the output, in YUV
+        Otherwise output in RGB is linearly scaled to fit into [0, 1] if input values are in [0, 1]
+    '''
     assert clip.format.id == vs.RGBS
-    opp = core.fmtc.matrix(clip, fulls=True, fulld=True, coef=[1/3, 1/3, 1/3, 0, 1/2, -1/2, 0, 1/2, 1/4, 1/4, -1/2, 1/2])
+    if normalize:
+        opp = core.fmtc.matrix(clip, fulls=True, fulld=True, col_fam=vs.YUV, coef=[1/sqrt(3), 1/sqrt(3), 1/sqrt(3), 0, 1/sqrt(2), -1/sqrt(2), 0, 0, 1/sqrt(6), 1/sqrt(6), -2/sqrt(6), 0])
+    else:
+        opp = core.fmtc.matrix(clip, fulls=True, fulld=True, coef=[1/3, 1/3, 1/3, 0, 1/2, -1/2, 0, 1/2, 1/4, 1/4, -1/2, 1/2])
     opp = core.std.SetFrameProps(opp, _Matrix=vs.MATRIX_UNSPECIFIED, BM3D_OPP=1)
     return opp
 
 
 def opp2rgb(clip: vs.VideoNode) -> vs.VideoNode:
-    rgb = core.fmtc.matrix(clip, fulls=True, fulld=True, coef=[1, 1, 2/3, -5/6, 1, -1, 2/3, 1/6, 1, 0, -4/3, 2/3])
+    if clip.format.id == vs.RGBS:
+        rgb = core.fmtc.matrix(clip, fulls=True, fulld=True, coef=[1, 1, 2/3, -5/6, 1, -1, 2/3, 1/6, 1, 0, -4/3, 2/3])
+    elif clip.format.id == vs.YUV444PS:
+        rgb = core.fmtc.matrix(clip, fulls=True, fulld=True, col_fam=vs.RGB, coef=[1/sqrt(3), 1/sqrt(2), 1/sqrt(6), 0, 1/sqrt(3), -1/sqrt(2), 1/sqrt(6), 0, 1/sqrt(3), 0, -2/sqrt(6), 0])
+    else:
+        raise ValueError(f'invalid format: {clip.format.name}')
     rgb = core.std.SetFrameProps(rgb, _Matrix=vs.MATRIX_RGB)
     rgb = core.std.RemoveFrameProps(rgb, 'BM3D_OPP')
     return rgb

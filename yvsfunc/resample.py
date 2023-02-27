@@ -524,25 +524,26 @@ def aa_limit(ref: vs.VideoNode, strong: vs.VideoNode, weak: vs.VideoNode, **lim_
 
 
 def rgb2opp(clip: vs.VideoNode, normalize: bool = False) -> vs.VideoNode:
-    ''' Set normalize=True if assuming the Gaussian noise on R, G and B planes are iid, and the same level will be kept in the output, in YUV
-        Otherwise output in RGB is linearly scaled to fit into [0, 1] if input values are in [0, 1]
+    ''' Set normalize=True if assuming the Gaussian noise on R, G and B planes are iid, and the same level will be kept in the output
+        Otherwise output is linearly scaled to fit into common YUV ranges
     '''
     assert clip.format.id == vs.RGBS
     if normalize:
-        opp = core.fmtc.matrix(clip, fulls=True, fulld=True, col_fam=vs.YUV, coef=[1/sqrt(3), 1/sqrt(3), 1/sqrt(3), 0, 1/sqrt(2), -1/sqrt(2), 0, 0, 1/sqrt(6), 1/sqrt(6), -2/sqrt(6), 0])
+        coef = [1/sqrt(3), 1/sqrt(3), 1/sqrt(3), 0, 1/sqrt(2), -1/sqrt(2), 0, 0, 1/sqrt(6), 1/sqrt(6), -2/sqrt(6), 0]
     else:
-        opp = core.fmtc.matrix(clip, fulls=True, fulld=True, coef=[1/3, 1/3, 1/3, 0, 1/2, -1/2, 0, 1/2, 1/4, 1/4, -1/2, 1/2])
+        coef = [1/3, 1/3, 1/3, 0, 1/2, -1/2, 0, 0, 1/4, 1/4, -1/2, 0]
+    opp = core.fmtc.matrix(clip, fulls=True, fulld=True, col_fam=vs.YUV, coef=coef)
     opp = core.std.SetFrameProps(opp, _Matrix=vs.MATRIX_UNSPECIFIED, BM3D_OPP=1)
     return opp
 
 
-def opp2rgb(clip: vs.VideoNode) -> vs.VideoNode:
-    if clip.format.id == vs.RGBS:
-        rgb = core.fmtc.matrix(clip, fulls=True, fulld=True, coef=[1, 1, 2/3, -5/6, 1, -1, 2/3, 1/6, 1, 0, -4/3, 2/3])
-    elif clip.format.id == vs.YUV444PS:
-        rgb = core.fmtc.matrix(clip, fulls=True, fulld=True, col_fam=vs.RGB, coef=[1/sqrt(3), 1/sqrt(2), 1/sqrt(6), 0, 1/sqrt(3), -1/sqrt(2), 1/sqrt(6), 0, 1/sqrt(3), 0, -2/sqrt(6), 0])
+def opp2rgb(clip: vs.VideoNode, normalize: bool = False) -> vs.VideoNode:
+    assert clip.format.id == vs.YUV444PS
+    if normalize:
+        coef = [1/sqrt(3), 1/sqrt(2), 1/sqrt(6), 0, 1/sqrt(3), -1/sqrt(2), 1/sqrt(6), 0, 1/sqrt(3), 0, -2/sqrt(6), 0]
     else:
-        raise ValueError(f'invalid format: {clip.format.name}')
+        coef = [1, 1, 2/3, 0, 1, -1, 2/3, 0, 1, 0, -4/3, 0]
+    rgb = core.fmtc.matrix(clip, fulls=True, fulld=True, col_fam=vs.RGB, coef=coef)
     rgb = core.std.SetFrameProps(rgb, _Matrix=vs.MATRIX_RGB)
     rgb = core.std.RemoveFrameProps(rgb, 'BM3D_OPP')
     return rgb

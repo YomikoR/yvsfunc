@@ -10,15 +10,15 @@ __all__ = [
     'show_over_range',
 ]
 
-def to_rgb(clip: vs.VideoNode, output_depth: int = 16) -> vs.VideoNode:
+def to_rgb(clip: vs.VideoNode) -> vs.VideoNode:
     '''
-    Default output is 16-bit
+    Output is 16-bit
     '''
     if clip.format.color_family == vs.RGB:
         return core.fmtc.bitdepth(clip, bits=16)
     else:
         rgbs = core.resize.Spline36(clip, format=vs.RGBS, matrix_in_s='709')
-        return core.fmtc.bitdepth(rgbs, bits=output_depth)
+        return core.fmtc.bitdepth(rgbs, bits=16)
 
 
 def playback(clip: vs.VideoNode, icc: Optional[str] = None, csp: str = '709', intent: str = 'relative') -> vs.VideoNode:

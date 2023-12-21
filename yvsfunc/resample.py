@@ -62,12 +62,6 @@ class ResClip:
         sh = self.sh if sh is None else sh
         return ResClip(clip, sx=sx, sy=sy, sw=sw, sh=sh)
 
-    def width(self) -> int:
-        return self.clip.width
-
-    def height(self) -> int:
-        return self.clip.height
-
     def make_fmtc_dict(self) -> Dict[str, float]:
         return dict(
             sx = self.sx,
@@ -188,8 +182,8 @@ def descale(
     if src_height is None:
         src_height = height
 
-    ratio_w = src_width / clip.width()
-    ratio_h = src_height / clip.height()
+    ratio_w = src_width / clip.width
+    ratio_h = src_height / clip.height
 
     dst_sx = src_left + ratio_w * clip.sx
     dst_sw =            ratio_w * clip.sw
@@ -258,8 +252,8 @@ def bdescale(
 
     y = ResClip(clip.std.ShufflePlanes(0, vs.GRAY))
 
-    ratio_w = src_width / y.width()
-    ratio_h = src_height / y.height()
+    ratio_w = src_width / y.width
+    ratio_h = src_height / y.height
 
     # The minimal number of extra pixels on the left
     extra_left = left * ratio_w - src_left
@@ -344,8 +338,8 @@ def fdescale(
     if ratio <= 0 or ratio >= 1:
         raise ValueError('fdescale: ratio must be within (0, 1)')
     y = ResClip(clip.std.ShufflePlanes(0, vs.GRAY)) # NOTE cropping cleared
-    src_width = y.width() * ratio
-    src_height = y.height() * ratio
+    src_width = y.width * ratio
+    src_height = y.height * ratio
     if base_width is None:
         base_width = ceil(src_width / 16) * 16
     if base_height is None:

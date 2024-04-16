@@ -136,15 +136,20 @@ class ResClip:
         args.update(dict(width=width, height=height))
         return self.resize.Bilinear(**args)
 
-    def double(self, clip2x: vs.VideoNode):
+    def double(self, clip2x: vs.VideoNode, inplace: bool = True):
         '''
         Use it for centered doubling, e.g. Waifu2x
         '''
-        self.clip = clip2x
-        self.sx *= 2
-        self.sy *= 2
-        self.sw *= 2
-        self.sh *= 2
+        if inplace:
+            self.clip = clip2x
+            self.sx *= 2
+            self.sy *= 2
+            self.sw *= 2
+            self.sh *= 2
+        else:
+            ret = self.copy()
+            ret.double(clip2x)
+            return ret
 
     def __getattr__(self, name: str):
         try:

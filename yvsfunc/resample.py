@@ -23,6 +23,12 @@ __all__ = [
     'aa_limit',
     'rgb2opp',
     'opp2rgb',
+    'xyz2lab',
+    'lab2xyz',
+    'lab2labview',
+    'labview2lab',
+    'deltaE76',
+    'deltaE94',
 ]
 
 class ResClip:
@@ -546,6 +552,76 @@ def opp2rgb(clip: vs.VideoNode, normalize: bool = False) -> vs.VideoNode:
     rgb = core.std.SetFrameProps(rgb, _Matrix=vs.MATRIX_RGB)
     rgb = core.std.RemoveFrameProps(rgb, 'BM3D_OPP')
     return rgb
+
+
+def xyz2lab(clip: vs.VideoNode):
+    assert clip.format.color_family == vs.RGB
+    clip = core.fmtc.bitdepth(clip, bits=32)
+    r, g, b = core.std.SplitPlanes(clip)
+    r = core.std.Expr(r, 'x 0.9642119944 /')
+    b = core.std.Expr(b, 'x 0.8251882845 /')
+    clip = core.std.ShufflePlanes([r, g, b], [0, 0, 0], vs.RGB)
+    clip = core.fmtc.transfer(clip, transs='linear', transd='lstar')
+    clip = core.fmtc.matrix(clip, coef=[0, 100, 0, 0, 12500/29, -12500/29, 0, 0, 0, 5000/29, -5000/29, 0])
+    return clip
+
+
+def lab2xyz(clip: vs.VideoNode):
+    assert clip.format.id == vs.RGBS
+    clip = core.fmtc.matrix(clip, coef=[0.01, 0.00232, 0, 0, 0.01, 0, 0, 0, 0.01, 0, -0.0058, 0])
+    clip = core.fmtc.transfer(clip, transs='lstar', transd='linear')
+    r, g, b = core.std.SplitPlanes(clip)
+    r = core.std.Expr(r, 'x 0.9642119944 *')
+    b = core.std.Expr(b, 'x 0.8251882845 *')
+    clip = core.std.ShufflePlanes([r, g, b], [0, 0, 0], vs.RGB)
+    return clip
+
+
+def lab2labview(clip: vs.VideoNode):
+    '''The L*a*b* values may be reasonably viewed in YUV format
+    '''
+    assert clip.format.id == vs.RGBS
+    clip = core.std.Expr(clip, ['x 100 /', 'x 255 /'])
+    clip = core.std.ShufflePlanes(clip, [0, 1, 2], vs.YUV)
+    return clip
+
+
+def labview2lab(clip: vs.VideoNode):
+    '''This reverts lab2labview
+    '''
+    assert clip.format.id == vs.YUV444PS
+    clip = core.std.ShufflePlanes(clip, [0, 1, 2], vs.RGB)
+    clip = core.std.Expr(clip, ['x 100 *', 'x 255 *'])
+    return clip
+
+
+### deltaE functions
+# dE94 is already rather slow so no dE2000 anyway
+
+
+def deltaE76(clip1: vs.VideoNode, clip2: vs.VideoNode):
+    L1, a1, b1 = core.std.SplitPlanes(clip1) # x y z
+    L2, a2, b2 = core.std.SplitPlanes(clip2) # a b c
+    delE = 'x a - dup * y b - dup * + z c - dup * + sqrt'
+    return core.std.Expr([L1, a1, b1, L2, a2, b2], delE)
+
+
+def deltaE94(clip1: vs.VideoNode, clip2: vs.VideoNode):
+    L1, a1, b1 = core.std.SplitPlanes(clip1) # x y z
+    L2, a2, b2 = core.std.SplitPlanes(clip2) # a b c
+    K1 = 0.045
+    K2 = 0.015
+    delL = 'x a -'
+    dela = 'y b -'
+    delb = 'z c -'
+    C1 = 'y dup * z dup * + sqrt'
+    C2 = 'b dup * c dup * + sqrt'
+    delC = f'{C1} {C2} -'
+    delH2 = f'{dela} dup * {delb} dup * + {delC} dup * -'
+    SC = f'1 {K1} {C1} * +'
+    SH = f'1 {K2} {C1} * +'
+    delE = f'{delL} dup * {delC} {SC} / dup * + {delH2} {SH} dup * / + sqrt'
+    return core.std.Expr([L1, a1, b1, L2, a2, b2], delE)
 
 
 ### Descale helpers
